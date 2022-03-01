@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D场景中插入新的几何体</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            /* 隐藏body窗口区域滚动条 */
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="../three.js-dev/examples/js/controls/OrbitControls.js"></script>
+    <script type="module">
+        // 创建场景
+        var scene = new THREE.Scene()
+
+        // 创建一个立方体
+        var geometry = new THREE.BoxGeometry(100, 100, 100)
+        // 创建一个球体
+        var geometry2 = new THREE.SphereGeometry(60, 40, 40);//创建一个球体几何对象
+
+        // 创建材质
+        var material = new THREE.MeshLambertMaterial({ color: 0x0000ff })
+        var material2 = new THREE.MeshLambertMaterial({
+            color: 0xff00ff
+        });
+        // 创建一个网格 (把材质赋予立方体)
+        var cube = new THREE.Mesh(geometry, material)
+        var mesh2 = new THREE.Mesh(geometry2, material2); //网格模型对象Mesh
+        // 朝Y轴移动120
+        mesh2.translateY(120);
+        // 把网格添加到场景
+        scene.add(cube)
+        scene.add(mesh2);
+
+        // 创建辅助坐标轴
+        scene.add( new THREE.AxesHelper( 2000 ) );
+        // 创建光源
+        var point = new THREE.PointLight(0xffffff);
+        // 设置光源位置
+        point.position.set(40, 200, 300);
+        scene.add(point);
+
+        var ambient = new THREE.AmbientLight(0x444444);
+        scene.add(ambient);
+
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+        camera.position.set(200, 300, 200); //设置相机位置
+        camera.lookAt(scene.position);
+
+        // 创建一个渲染器
+        var renderer = new THREE.WebGLRenderer()
+        // 设置尺寸
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setClearColor(0xb9d3ff, 1);
+        // 往div里追加渲染器的dom元素
+        // document.body.appendChild(render.domElement);
+        document.body.appendChild(renderer.domElement);
+
+        // 将场景和摄像机对象传入渲染器
+
+        function render() {
+            renderer.render(scene, camera)
+            requestAnimationFrame(render)
+        }
+        render()
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);//创建控件对象
+        // controls.addEventListener('change',render)
+    </script>
+</body>
+
+</html>
