@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>基础模板</title>
+</head>
+
+<body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="../three.js-dev/examples/js/controls/OrbitControls.js"></script>
+    <script type="module">
+        // 定义场景、相机、渲染器、网格、地面、环境光、点光源 变量
+        var scene, camera, renderer, mesh, meshfloor, ambientLight, pointLight;
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 100);
+
+        // 新建一个箱子
+        mesh = new THREE.Mesh(
+            new THREE.BoxGeometry(5, 5, 5), //创建5*5*5的箱子的大小
+            // 注意：箱子不能使用MeshBasicMaterial，否则会出现光照无反应
+            new THREE.MeshPhongMaterial({
+                color: 0x757575,
+                wireframe: false
+            })
+        )
+        // 箱子去接受光源
+        mesh.receiveShadow = true;
+        // 箱子去投射光源
+        mesh.castShadow = true;
+        mesh.position.y += 5/2; //设置箱子的位置坐标
+
+        // 创建一个地面
+        meshfloor = new THREE.Mesh(
+            new THREE.PlaneGeometry(130, 130, 10, 10),
+            new THREE.MeshPhongMaterial({
+                color: 0x1B5E20,
+                wireframe: false
+            })
+        )
+        meshfloor.rotation.x -= Math.PI / 2;
+        // 地面同样设置去接受光源
+        meshfloor.receiveShadow = true;
+
+        // 将所有创建的物体加入到场景中去
+        scene.add(mesh);
+        scene.add(meshfloor);
+
+        // 环境光
+        ambientLight = new THREE.AmbientLight(0xffffff,1); //环境光的颜色以及强弱
+        // 点光
+        pointLight = new THREE.PointLight(0xffffff,1);
+        pointLight.position.set(0, 8, 0);
+        pointLight.castShadow = true;
+        pointLight.shadow.camera.near = 0.1;
+        pointLight.shadow.camera.far = 25;
+
+        scene.add(ambientLight);
+        scene.add(pointLight);
+
+        camera.position.set(10, 10, 10);
+        camera.up.set(0,1,0);
+        camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+        // 给渲染器添加阴影效果
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.BasicShadowMap;
+        document.body.appendChild(renderer.domElement);
+
+        // 每一帧去循环调用render()函数
+        animate();
+
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);//创建控件对象
+    </script>
+</body>
+
+</html>
