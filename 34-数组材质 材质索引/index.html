@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>34-数组材质 材质索引</title>
+</head>
+
+<body>
+    <script src="https://threejs.org/build/three.min.js"></script>
+    <script src="../three.js-dev/examples/js/controls/OrbitControls.js"></script>
+    <script type="module">
+        // 1.创建场景对象
+        var scene = new THREE.Scene()
+        scene.add(new THREE.AxesHelper(2000));//添加辅助坐标轴
+
+        // 2.创建一个摄像机
+        var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000)
+        camera.position.set(200, 300, 200); //设置相机位置
+        camera.lookAt(scene.position);
+
+        // 3.创建一个渲染器
+        var renderer = new THREE.WebGLRenderer()
+        renderer.setClearColor(0xb9d3ff, 1);// 设置颜色
+        renderer.setSize(window.innerWidth, window.innerHeight)// 设置尺寸
+        document.body.appendChild(renderer.domElement);// 往body里面追加render的dom元素
+
+        // 4.创建光源 点光源以及环境光
+        var point = new THREE.PointLight(0xffffff);// 创建点光源 没有点光源 模型无法反射光 所以是黑的
+        point.position.set(400, 200, 300);// 设置光源位置
+        scene.add(point);// 创建环境光 没有环境光模型可以显示 但是会比较暗
+        var ambient = new THREE.AmbientLight(0x444444);
+        scene.add(ambient);
+
+        // 5.创建一个网格模型 
+        var geometry = new THREE.BoxGeometry(100, 100, 100); //立方体
+        // 你可以测试BoxGeometry、PlaneGeometry、CylinderGeometry三角形面的材质索引
+        // 查看face3对象的materialIndex属性
+        var material1 = new THREE.MeshBasicMaterial({
+            color: 'black'
+        })
+        var material2 = new THREE.MeshPhongMaterial({
+            color: 'red',
+            // wireframe:true,
+        }); //材质对象Material
+        var materialArr = [material1, material2];
+        geometry.groups[4].materialIndex = 1;
+        geometry.groups[5].materialIndex = 0
+        geometry.groups[2].materialIndex = 0
+        console.log(geometry.groups);
+        geometry.groups.forEach(elem => {
+            console.log(elem.materialIndex);
+        });
+        var mesh = new THREE.Mesh(geometry, materialArr)
+        scene.add(mesh)
+        // 6.渲染
+        function render() {
+            renderer.render(scene, camera)
+            requestAnimationFrame(render)
+        }
+        render()
+        var controls = new THREE.OrbitControls(camera, renderer.domElement);//创建控件对象
+    </script>
+</body>
+
+</html>

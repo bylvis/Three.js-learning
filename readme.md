@@ -454,3 +454,368 @@ points	Vector2表示的坐标数据组成的数组
 segments	圆周方向细分数，默认12
 phiStart	开始角度,默认0
 phiLength	旋转角度，默认2π
+
+## shape对象和轮廓填充
+<!-- 轮廓填充ShapeGeometry -->
+算法：根据轮廓的顶点使用三角面Face3自动填充中间区域
+第一个参数：Shape对象 Shape对象作为元素构成的数组
+<!-- shape -->
+1.绘制二维形状
+外轮廓：shape继承基类Path的轮廓绘制方法
+内部轮廓：.holes属性 数组：元素是Path对象
+2.外部导入顶点
+可视化解析地图数据
+<!-- 基类子类 -->
+从前到后，依次前面是后面基类
+Curve——>CurvePath——>Path——>Shape
+Curve——>CurvePath——>ShapePath
+Shape圆弧方法.absarc()
+1.通过点创建
+var points = [
+    new THREE.Vector2(-50, -50),
+    new THREE.Vector2(-60, 0),
+    new THREE.Vector2(0, 50),
+    new THREE.Vector2(60, 0),
+    new THREE.Vector2(50, -50),
+    new THREE.Vector2(-50, -50),
+]
+var shape = new THREE.Shape(points)
+var geometry = new THREE.ShapeGeometry(shape, 25);
+var materail = new THREE.MeshPhongMaterial()
+var mesh = new THREE.Mesh(geometry, materail)
+scene.add(mesh)
+
+2.通过圆弧方法创建
+var shape1 = new THREE.Shape()
+shape1.absarc(0, 0, 100, 0, 2 * Math.PI)
+var geometry1 = new THREE.ShapeGeometry(shape1, 25)
+var mesh1 = new THREE.Mesh(geometry1, materail)
+scene.add(mesh1)
+
+3.通过shape移动创建
+var shape2 = new THREE.Shape()
+// 四条直线绘制一个矩形轮廓
+shape2.moveTo(20, 0);//起点
+shape2.lineTo(20, 100);//第2点
+shape2.lineTo(120, 100);//第3点
+shape2.lineTo(120, 0);//第4点
+shape2.lineTo(20, 0);//第5点
+var geometry2 = new THREE.ShapeGeometry(shape2,26)
+var mesh2 = new THREE.Mesh(geometry2,materail)
+scene.add(mesh2)
+<!-- ShapeGeometry会使用三角形自动填充shape内轮廓和外轮廓中间的中部 -->
+## 拉伸成型
+ExtrudeGeometry()可以利用2D轮廓生成3D模型
+参数	含义
+amount	拉伸长度，默认100
+bevelEnabled	是否使用倒角	
+bevelSegments	倒角细分数，默认3
+bevelThickness	倒角尺寸(经向)
+curveSegments	拉伸轮廓细分数
+steps	拉伸方向细分数
+extrudePath	扫描路径THREE.CurvePath，默认Z轴方向
+material	前后面材质索引号
+extrudeMaterial	拉伸面、倒角面材质索引号
+bevelSize	倒角尺寸(拉伸方向)
+通过使用点模式渲染上面的几何体，可以看出几何体拉伸的本质效果就是空间分布顶点数据的产生。
+
+## 扫描成型
+对于扫描而言不需要定义amount属性设置拉伸距离，设置扫描路径即可， 定义属性extrudePath，extrudePath的值是路径THREE.CurvePath
+var shape = new THREE.Shape();
+/**四条直线绘制一个矩形轮廓*/
+shape.moveTo(0,0);//起点
+shape.lineTo(0,10);//第2点
+shape.lineTo(10,10);//第3点
+shape.lineTo(10,0);//第4点
+shape.lineTo(0,0);//第5点
+/**创建轮廓的扫描轨迹(3D样条曲线)*/
+var curve = new THREE.SplineCurve3([
+   new THREE.Vector3( -10, -50, -50 ),
+   new THREE.Vector3( 10, 0, 0 ),
+   new THREE.Vector3( 8, 50, 50 ),
+   new THREE.Vector3( -5, 0, 100)
+]);
+var geometry = new THREE.CatmullRomCurve3(//拉伸造型
+   shape,//二维轮廓
+   //拉伸参数
+   {
+       bevelEnabled:false,//无倒角
+       extrudePath:curve,//选择扫描轨迹
+       steps:50//扫描方向细分数
+   }
+);
+var material=new THREE.PointsMaterial({
+    color:0x0000ff,
+    size:5.0//点对象像素尺寸
+});//材质对象
+var mesh=new THREE.Points(geometry,material);//点模型对象
+scene.add(mesh);//点模型添加到场景中
+
+# 纹理贴图
+## 创建纹理贴图
+两种创建方式
+<!-- 1.加载纹理 -->
+// 纹理贴图映射到一个矩形平面上
+var geometry = new THREE.PlaneGeometry(204, 102); //矩形平面
+// TextureLoader创建一个纹理加载器对象，可以加载图片作为几何体纹理
+var textureLoader = new THREE.TextureLoader();
+// 执行load方法，加载纹理贴图成功后，返回一个纹理对象Texture
+textureLoader.load('Earth.png', function(texture) {
+  var material = new THREE.MeshLambertMaterial({
+    // color: 0x0000ff,
+    // 设置颜色纹理贴图：Texture对象作为材质map属性的属性值
+    map: texture,//设置颜色贴图属性值
+  }); //材质对象Material
+  var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+  scene.add(mesh); //网格模型添加到场景中
+
+  //纹理贴图加载成功后，调用渲染函数执行渲染操作
+  // render();
+})
+<!-- 加载图片 -->
+// 图片加载器
+var ImageLoader = new THREE.ImageLoader();
+// load方法回调函数，按照路径加载图片，返回一个html的元素img对象
+ImageLoader.load('Earth.png', function(img) {
+  // image对象作为参数，创建一个纹理对象Texture
+  var texture = new THREE.Texture(img);
+  // 下次使用纹理时触发更新
+  texture.needsUpdate = true;
+  var material = new THREE.MeshLambertMaterial({
+    map: texture, //设置纹理贴图
+  });
+  var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+  scene.add(mesh); //网格模型添加到场景中
+});
+
+## UV映射原理
+几何体有两组UV坐标，第一组组用于.map、.normalMap、.specularMap等贴图的映射，第二组用于阴影贴图.lightMap的映射。
+<!-- 体验uv坐标 -->
+纹理坐标含义就是一面意思，一张纹理贴图图像的坐标，选择一张图片，比如以图片左下角为坐标原点，右上角为坐标(1.0,1.0)，图片上所有位置纵横坐标都介于0.0~1.0之间。
+
+纹理坐标和模型坐标一一对应
+纹理坐标是0~1的 如果一个图片是50x50  模型是60x60
+那0-1的部分 就是图片的0-50
+0-1的位置 就是模型的0-60
+会根据那个比例来裁剪对象
+
+## 数组材质 材质索引
+<!-- 通过以下代码查看 -->
+var geometry = new THREE.BoxGeometry(100, 100, 100); //立方体
+// 你可以测试BoxGeometry、PlaneGeometry、CylinderGeometry三角形面的材质索引
+// 查看face3对象的materialIndex属性
+console.log(geometry.faces);
+geometry.faces.forEach(elem => {
+  console.log(elem.materialIndex);
+});
+<!-- 注意 geometry.faces =》geometry.groups 版本已经换成这个了-->
+想要给box的每一个面赋予材质
+需要创建一个材质数组 然后再通过geometry.groups[4].materialIndex 设置材质索引
+var geometry = new THREE.BoxGeometry(100, 100, 100); //立方体
+// 你可以测试BoxGeometry、PlaneGeometry、CylinderGeometry三角形面的材质索引
+// 查看face3对象的materialIndex属性
+var material1 = new THREE.MeshBasicMaterial({
+    color: 'black'
+})
+var material2 = new THREE.MeshPhongMaterial({
+    color: 'red',
+    // wireframe:true,
+}); //材质对象Material
+var materialArr = [material1, material2];
+geometry.groups[4].materialIndex = 1;
+geometry.groups[5].materialIndex = 0
+geometry.groups[2].materialIndex = 0
+console.log(geometry.groups);
+geometry.groups.forEach(elem => {
+    console.log(elem.materialIndex);
+});
+var mesh = new THREE.Mesh(geometry, materialArr)
+scene.add(mesh)
+
+## 纹理对象Texture
+<!-- 纹理贴图阵列映射。相当于是拉size -->
+var geometry = new THREE.PlaneGeometry(80, 80)// 开始创建立方体
+// var material = new THREE.MeshLambertMaterial({ color: 'skyblue' });// 创建材质
+var textureLoader = new THREE.TextureLoader();
+// 执行load方法，加载纹理贴图成功后，返回一个纹理对象Texture
+textureLoader.load('图片2.png', function (texture) {
+    var material = new THREE.MeshLambertMaterial({
+        // color: 0x0000ff,
+        // 设置颜色纹理贴图：Texture对象作为材质map属性的属性值
+        map: texture,//设置颜色贴图属性值
+    }); //材质对象Material
+    // 设置阵列模式   默认ClampToEdgeWrapping  RepeatWrapping：阵列  镜像阵列：MirroredRepeatWrapping
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    // uv两个方向纹理重复数量
+    texture.repeat.set(4, 4);
+    var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+    scene.add(mesh); //网格模型添加到
+    //纹理贴图加载成功后，调用渲染函数执行渲染操作
+    // render();
+}
+<!-- 偏移 texture.offset -->
+texture.offset = new THREE.Vector2(0.3, 0.1)
+<!-- 旋转 texture.rotation = Math.PI/4; -->
+设置旋转中心默认0,0
+texture.center.set(0.5,0.5);
+## 纹理动画
+原理是 给网格赋的材质 动态设置偏移 就形成动画效果
+function render() {
+    renderer.render(scene, camera)
+    requestAnimationFrame(render)
+    texture.offset.x -= 0.06
+}
+render()
+<!-- 加载canvas作为纹理 -->
+var texture = new THREE.CanvasTexture(canvas);
+<!-- Canvas画布加载图片 -->
+如果作为纹理贴图使用的Canvas画布加载了图片，注意在图片加载完成的时候更新Threejs相关模型的纹理贴图。如果不更新纹理，你会发现canvas画布上的图片无法现在是Threejs模型的纹理上。
+var canvas = document.createElement("canvas");
+...
+var ctx = canvas.getContext('2d');
+var Image = new Image();
+Image.src = "./贴图.jpg";
+Image.onload = function() {
+  var bg = ctx.createPattern(Image, "no-repeat");
+...
+// 注意图片加载完成执行canvas相关方法后，要更新一下纹理
+  texture.needsUpdate = true;
+}
+<!-- 加载视频作为纹理 -->
+let video = document.createElement('video');
+video.src = "Rec 0002000000000-000047000.mp4"; // 设置视频地址
+video.autoplay = "autoplay"; //要设置播放
+// video对象作为VideoTexture参数创建纹理对象
+var texture = new THREE.VideoTexture(video)
+var geometry = new THREE.PlaneGeometry(108, 71); //矩形平面
+var material = new THREE.MeshPhongMaterial({
+    map: texture, // 设置纹理贴图
+}); //材质对象Material
+var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+scene.add(mesh); //网格模型添加到场景中
+<!-- VideoTexture.js封装了一个update函数，Threejs每次执行渲染方法进行渲染场景中的时候，都会执行VideoTexture封装的update函数，执行update函数中代码this.needsUpdate = true;读取视频流最新一帧图片来更新Threejs模型纹理贴图。 -->
+
+## 凹凸贴图bumpMap和法线贴图.normalMap
+只有MeshPhongMaterial材质有法线贴图属性
+
+一个复杂的曲面模型，往往模型顶点数量比较多，模型文件比较大，为了降低模型文件大小，法线贴图.normalMap算法自然就产生了，复杂的三维模型3D美术可以通过减面操作把精模简化为简模，然后把精模表面的复杂几何信息映射到法线贴图.normalMap上。
+// TextureLoader创建一个纹理加载器对象，可以加载图片作为几何体纹理
+var textureLoader = new THREE.TextureLoader();
+// 加载法线贴图
+var textureNormal = textureLoader.load('./normal3_256.jpg');
+var material = new THREE.MeshPhongMaterial({
+  color: 0xff0000,
+  normalMap: textureNormal, //法线贴图
+  //设置深浅程度，默认值(1,1)。
+  normalScale: new THREE.Vector2(3, 3),
+}); //材质对象Material
+var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+
+凹凸贴图和法线贴图功能相似，只是没有法线贴图表达的几何体表面信息更丰富。凹凸贴图是用图片像素的灰度值表示几何表面的高低深度，如果模型定义了法线贴图，就没有必要在使用凹凸贴图。
+var textureLoader = new THREE.TextureLoader();
+// 加载颜色纹理贴图
+var texture = textureLoader.load('./凹凸贴图/diffuse.jpg');
+// 加载凹凸贴图
+var textureBump = textureLoader.load('./凹凸贴图/bump.jpg');
+var material = new THREE.MeshPhongMaterial({
+  map: texture,// 普通纹理贴图
+  bumpMap:textureBump,//凹凸贴图
+  bumpScale:3,//设置凹凸高度，默认值1。
+}); //材质对象Material
+
+## 光照贴图添加阴影(·lightMap)
+<!-- 一般通过Threejs几何体API创建的几何体默认只有一组纹理坐标Geometry.faceVertexUvs[0]，所以为了设置光照阴影贴图，需要给另一组纹理坐标赋值Geometry.faceVertexUvs[1] = -->
+<!-- BufferGeometry，对于BufferGeometry而言两套纹理坐标分别通过.uv和.uv2属性表示。 -->
+//创建一个平面几何体作为投影面
+var planeGeometry = new THREE.PlaneGeometry(300, 200);
+
+planeGeometry.faceVertexUvs[1] = planeGeometry.faceVertexUvs[0];
+var textureLoader = new THREE.TextureLoader();
+// 加载光照贴图
+var textureLight = textureLoader.load('shadow.png');
+var planeMaterial = new THREE.MeshLambertMaterial({
+  color: 0x999999,
+  lightMap:textureLight,// 设置光照贴图
+  // lightMapIntensity:0.5,//烘培光照的强度. 默认 1.
+});
+var planeMesh = new THREE.Mesh(planeGeometry, planeMaterial); //网格模型对象Mesh
+之前模型的阴影是通过实时计算得到的，而光照贴图·lightMap是3D美术渲染好提供给程序员。这两种方式相比较通过贴图的方式更为节约资源，提高渲染性功能。
+## 高光贴图(.specularMap)
+高光网格材质MeshPhongMaterial具有高光属性.specular,如果一个网格模型Mesh都是相同的材质并且表面粗糙度相同,或者说网格模型外表面所有不同区域的镜面反射能力相同，可以直接设置材质的高光属性.specular。
+如果一个网格模型表示一个人，那么人的不同部位高光程度是不同的，不可能直接通过.specular属性来描述，在这种情况通过高光贴图.specularMap的RGB值来描述不同区域镜面反射的能力，.specularMap和颜色贴图.Map一样和通过UV坐标映射到模型表面。高光贴图.specularMap不同区域像素值不同，表示网格模型不同区域的高光值不同。
+// 加载纹理贴图
+var texture = textureLoader.load('earth_diffuse.png');
+// 加载高光贴图
+var textureSpecular = textureLoader.load('earth_specular.png');
+var material = new THREE.MeshPhongMaterial({
+  // specular: 0xff0000,//高光部分的颜色
+  shininess: 30,//高光部分的亮度，默认30
+  map: texture,// 普通纹理贴图
+  specularMap: textureSpecular, //高光贴图
+}); //材质对象Material
+## 环境贴图(.envMap)
+Three.js环境贴图.envMap字面意思就是三维模型周边环境，比如你渲染一个立方体，立方体放在一个屋子里面，屋子里面的周边环境肯定影响立方体的渲染效果，目的是为了渲染该立方体而不是立方体周围环境，为了更方便所以没必要创建立方体周边环境所有物体的网格模型，可以通过图片来表达立方体周边的环境。
+var geometry = new THREE.BoxGeometry(100, 100, 100); //立方体
+
+var loader = new THREE.CubeTextureLoader();
+// 所有贴图在同一目录下，可以使用该方法设置共用路径
+loader.setPath('环境贴图/');
+// 立方体纹理加载器返回立方体纹理对象CubeTexture
+var CubeTexture = loader.load(['px.jpg', 'nx.jpg', 'py.jpg', 'ny.jpg', 'pz.jpg', 'nz.jpg']);
+//材质对象Material
+var material = new THREE.MeshPhongMaterial({
+  //网格模型设置颜色，网格模型颜色和环境贴图会进行融合计算
+  // color:0xff0000,
+  envMap: CubeTexture, //设置环境贴图
+  // 环境贴图反射率   控制环境贴图对被渲染三维模型影响程度
+  // reflectivity: 0.1,
+});
+console.log(CubeTexture.image);
+var mesh = new THREE.Mesh(geometry, material); //网格模型对象Mesh
+scene.add(mesh); //网格模型添加到场景中
+
+## 数据纹理对象DataTexture
+Three.js数据纹理对象DataTexture简单地说就是通过程序创建纹理贴图的每一个像素值。
+var geometry = new THREE.PlaneGeometry(128, 128); //矩形平面
+/**
+ * 创建纹理对象的像素数据
+ */
+var width = 32; //纹理宽度
+var height = 32; //纹理高度
+var size = width * height; //像素大小
+var data = new Uint8Array(size * 3); //size*3：像素在缓冲区占用空间
+for (let i = 0; i < size * 3; i += 3) {
+  // 随机设置RGB分量的值
+  data[i] = 255 * Math.random()
+  data[i + 1] = 255 * Math.random()
+  data[i + 2] = 255 * Math.random()
+}
+// 创建数据文理对象   RGB格式：THREE.RGBFormat
+var texture = new THREE.DataTexture(data, width, height, THREE.RGBFormat);
+texture.needsUpdate = true; //纹理更新
+//打印纹理对象的image属性
+// console.log(texture.image);
+
+var material = new THREE.MeshPhongMaterial({
+  map: texture, // 设置纹理贴图
+}); //材质对象Material
+var mesh = new THREE.Mesh(geometry, material);
+
+# 相机对象
+对于正投影而言，一条直线放置的角度不同，投影在投影面上面的长短不同。
+正射投影 远近不会影响物体的显示大小 只有角度不同才会影响大小
+透视投影 远近会影响大小
+对于透视投影而言，投影的结果除了与几何体的角度有关，还和距离相关， 人的眼睛观察世界就是透视投影
+## 正投影相机对象OrthographicCamera
+left	渲染空间的左边界
+right	渲染空间的右边界
+top	渲染空间的上边界
+bottom	渲染空间的下边界
+near	near属性表示的是从距离相机多远的位置开始渲染，一般情况会设置一个很小的值。 默认值0.1
+far	far属性表示的是距离相机多远的位置截止渲染，如果设置的值偏小小，会有部分场景看不到。 默认值1000
+
+## Three.js浏览器窗口尺寸变化(自适应渲染)
+通过鼠标拖动使浏览器的窗口变大，因为Threejs渲染器的渲染尺寸范围没有跟着变化，出现局部空白区域。对于这种情况要做的就是重新获取浏览器窗口新的宽高尺寸，然后通过新的宽高尺寸更新相机Camera和渲染器WebGLRenderer的参数即可
+## 视图矩阵.matrixWorldInverse和投影矩阵.projectionMatrix
+只要知道相机参数会影响视图矩阵和投影矩阵就行，至于内部如何影响的可以当成黑箱。
